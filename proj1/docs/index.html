@@ -1,0 +1,211 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>
+  body {
+    padding: 100px;
+    width: 1000px;
+    margin: auto;
+    text-align: left;
+    font-weight: 300;
+    font-family: 'Open Sans', sans-serif;
+    color: #121212;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+</style>
+<title>CS 184 Rasterizer</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+</head>
+
+
+<body>
+
+<h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2018</h1>
+<h1 align="middle">Project 1: Rasterizer</h1>
+<h2 align="middle">Nick Drian, CS184-Fall22</h2>
+
+<br><br>
+
+    <div>
+
+        <h2 align="middle">Overview</h2>
+        <p> In this project implamented and optimized a 2D rasterization engine. I then made a program that generates svg flies of the mandelbrot set, and I rendered this using my rasterization engine. C++ is a new language for me and so I encountered lots of bugs, but I was able to pull it together and make some work that I am proud of</p>
+
+        <h2 align="middle">Section I: Rasterization</h2>
+
+        <h3 align="middle">Part 1: Rasterizing single-color triangles</h3>
+
+        <p>
+            I initially rasterized triangles using the naieve brute fource method. I created a bounding box around each triangle, and for eack pixel within that box, I tested to see if it is within the triangle before handeling it acordingly.
+
+            I improved on this aproach by creating a function called get_level_bounds in rasterizer.cpp that takes in a triangle and returns the specific pixels that It takes up. This function does so by intersecting the edges of the trinagle with horazontal lines coresponding to rows of pixels to find the begining and end of each row of pixels within the triangle. This means that my program dosnt have to check to see if pixels are within triangles and it speeds up computation vastly. Unfortionatly, I deleted my first brute force implementation before I realized that I was supposed to run tests on it, and thus I cannot compair the runtimes of the two methods. My implementation is however visible in the rasterize_triangle method in raterizer.cpp 
+        </p>
+
+        <td>
+            <img src="images/part1-1.png" align="middle" width="400px" />
+            <figcaption align="middle"></figcaption>
+        </td>
+
+
+        <h3 align="middle">Part 2: Antialiasing triangles</h3>
+
+        <p>
+            I implamented supersampling by creating a sample buffer that is scaled up by the number of samples per pixel. I then sampled at even intervals through each pixel to create a higher resolution sample image. I then averaged the sample buffer values within each screen pixel and wrote the value to the frame buffer. Essentially, I created a high resolution image and then downsampled it to help with aliasing and get rid of unwanted noise.
+        </p>
+
+        <div align="middle">
+            <table style="width=100%">
+                <tr>
+                    <td>
+                        <img src="images/part2-1.png" align="middle" width="400px" />
+                        <figcaption align="middle">1 sample per pix.</figcaption>
+                    </td>
+                </tr>
+                <br />
+                <tr>
+                    <td>
+                        <img src="images/part2-2.png" align="middle" width="400px" />
+                        <figcaption align="middle">4 samples per pix.</figcaption>
+                    </td>
+                    <td>
+                        <img src="images/part2-3.png" align="middle" width="400px" />
+                        <figcaption align="middle">16 samples per pix.</figcaption>
+                    </td>
+
+                </tr>
+            </table>
+        </div>
+
+
+        <h3 align="middle">Part 3: Transforms</h3>
+
+        <p>
+            I made my cube man wave give a nice friendly wave.
+        </p>
+        <td>
+            <img src="images/part3-1.png" align="middle" width="400px" />
+            <figcaption align="middle"></figcaption>
+        </td>
+
+        <h2 align="middle">Section II: Sampling</h2>
+
+        <h3 align="middle">Part 4: Barycentric coordinates</h3>
+
+        <p>
+            Bary centric coordinates are coordinates that coorespond to the weights of a weighted average of the three points that make up a triangle. If each of these coordinatese is between zero and one and they all sum to one, then they represent a point within the triangle. If the coordinates sum to one but some of them are negative, they represent a point on the triangles plane. Barycentric coordinates are convenient because their weights allow for smooth color interpalation between the vertexes of a triangle. This is done through a weighted average of the colors at each vertex.
+        </p>
+
+        <td>
+            <img src="images/part4-1.png" align="middle" width="400px" />
+            <figcaption align="middle">16 samples per pix.</figcaption>
+        </td>
+
+        <h3 align="middle">Part 5: "Pixel sampling" for texture mapping</h3>
+
+        <p>
+            pixel sampeling for texture maping is when each screen point is mapped to its correspinding point in a texture map. this is done by storing texture points in each vertex and using barycentric coordinates to find the texture value that correspoinds to each sample of each triangle. when texture samples are taken between individual values in the texture map, there are a few options. one thing that can be done is linear interpolation where a weighted average is taken of all surrounding texture values. another option is simply to find the nearest texture value and use that. These two sampling methods come with tradeoffs. Nearest pixel sampling is computationaly cheeper, however it can create less smooth images with aliasing. Linear interpolation is computationaly more expensive than nearest pixel sampling but it can smooth out jaggies and other artifacts of the smapling process.
+        </p>
+
+        <div align="middle">
+            <table style="width=100%">
+                <tr>
+                    <td>
+                        <img src="images/part5-1.png" align="middle" width="400px" />
+                        <figcaption align="middle">Nearest Sample, 1 sample per pix.</figcaption>
+                    </td>
+                    <td>
+                        <img src="images/part5-2.png" align="middle" width="400px" />
+                        <figcaption align="middle">Nearest Sample, 16 samples per pix.</figcaption>
+                    </td>
+                </tr>
+                <br />
+                <tr>
+                    <td>
+                        <img src="images/part5-3.png" align="middle" width="400px" />
+                        <figcaption align="middle">Bilinear interpolation, 1 samples per pix.</figcaption>
+                    </td>
+                    <td>
+                        <img src="images/part5-4.png" align="middle" width="400px" />
+                        <figcaption align="middle">Bilinear interpolation, 16 samples per pix.</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <h3 align="middle">Part 6: "Level sampling" with mipmaps for texture mapping</h3>
+
+        <p>
+            level sampeling is when different texture maps are sampled depending on the size at which a texture is being displayed. level sampeling prevents aliasing from occuring when a high resolution texture needs to be sampled at a low frequency. The idea is to have small texture maps for stuff that is far away, and large high res versions for when stuff is close up. I implamented this by chosing what level of the mip map to sample based on the relative scale of texture compared with where it maps to. 
+        </p>
+
+        <div align="middle">
+            <table style="width=100%">
+                <tr>
+                    <td>
+                        <img src="images/part6-5.png" align="middle" width="400px" />
+                        <figcaption align="middle">Level 0. Nearest pix. 1 sample per pix.</figcaption>
+                    </td>
+                    <td>
+                        <img src="images/part6-6.png" align="middle" width="400px" />
+                        <figcaption align="middle">Level 0. Linear Interpolation. 1 sample per pix.</figcaption>
+                    </td>
+                </tr>
+                <br />
+                <tr>
+                    <td>
+                        <img src="images/part6-7.png" align="middle" width="400px" />
+                        <figcaption align="middle">Nearest Level. Nearest pix. 1 sample per pix.</figcaption>
+                    </td>
+                    <td>
+                        <img src="images/part6-8.png" align="middle" width="400px" />
+                        <figcaption align="middle">Nearest Level. Linear Interpolation. 1 sample per pix.</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <h2 align="middle">Section III: Art Competition</h2>
+
+        <h3 align="middle">Part 7: Draw something interesting!</h3>
+
+        <p>Show below are svg images that I generated using the recursiveGen function in main.cpp. My algorithm starts with two triangles that make up a rectangular image. It then recursively subdivides these triangels to create fractals. My algorithm continually subdivides triangles that map to chaotic regions in the mandelbrot set, while leaving alone triangles that are in stable regions of the mandelbrot set. I then map these triangles to colors based on how many iterations it takes for the recursive function Z = Z^2 + C to excede a maximum size.</p>
+
+        <div align="middle">
+            <table style="width=100%">
+                <tr>
+                    <td>
+                        <img src="images/part7-1.png" align="middle" width="400px" />
+          
+                    </td>
+                    <td>
+                        <img src="images/part7-2.png" align="middle" width="400px" />
+            
+                    </td>
+                </tr>
+                <br />
+                <tr>
+                    <td>
+                        <img src="images/part7-3.png" align="middle" width="400px" />
+         
+                    </td>
+                    <td>
+                        <img src="images/part7-4.png" align="middle" width="400px" />
+                    </td>
+                </tr>
+                <br />
+                <tr>
+                    <td>
+                        <img src="images/part7-5.png" align="middle" width="400px" />
+                    </td>
+                    <td>
+                        <img src="images/part7-6.png" align="middle" width="400px" />
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+    </div></body>
+</html>
