@@ -1,7 +1,246 @@
-<html>
-	<head>
-	</head>
-	<body>
-		Project 2 here
-	</body>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+	<style>
+		body {
+			padding: 100px;
+			width: 1000px;
+			margin: auto;
+			text-align: left;
+			font-weight: 300;
+			font-family: 'Open Sans', sans-serif;
+			color: #121212;
+		}
+
+		h1,
+		h2,
+		h3,
+		h4 {
+			font-family: 'Source Sans Pro', sans-serif;
+		}
+	</style>
+	<title>CS 184 Mesh Editor</title>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+	<link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+</head>
+
+
+<body>
+
+	<h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2022</h1>
+	<h1 align="middle">Project 2: Mesh Editor</h1>
+	<h2 align="middle">Nick Drian, CS184-??</h2>
+
+	<br><br>
+
+	<div>
+
+		<h2 align="middle">Overview</h2>
+		<p>
+			In this project, I learned all about how geometry is represented in the computer. I mastered bezier curves and tried a couple mesh manipulation tricks using a half edge data structure. Boundary conditions made for some tricky edge cases; however, all of the algorithms ended up being quite simple because of the handy-dandy half edge mesh data structure.
+		</p>
+
+		<h2 align="middle">Section I: Bezier Curves and Surfaces</h2>
+
+		<h3 align="middle">Part 1: Bezier curves with 1D de Casteljau subdivision</h3>
+
+		<p>
+			De Casteljau's algorithm is one that can smooth a polyline into a bezier curve. De Casteljau’s algorithm can locate any point on the bezier curve at time 0 <= t <= 100.  It does this by finding a point that is t percent of the way across each segment of the polyline and connecting up these new points into a new polyline that is shorter than the original by one segment. The final result will be an individual point at time t on the smooth bezier curve.
+		</p>
+
+		<div align="middle">
+			<table style="width=100%">
+				<tr>
+					<td>
+						<img src="image/png/1-1.png" align="middle" width="400px" />
+						<figcaption align="middle">1 iteration</figcaption>
+					</td>
+					<td>
+						<img src="image/png/1-2.png" align="middle" width="400px" />
+						<figcaption align="middle">2 iterations</figcaption>
+					</td>
+				</tr>
+				<br />
+				<tr>
+					<td>
+						<img src="image/png/1-3.png" align="middle" width="400px" />
+						<figcaption align="middle">3 iterations</figcaption>
+					</td>
+					<td>
+						<img src="image/png/1-4.png" align="middle" width="400px" />
+						<figcaption align="middle">4 iterations and final curve</figcaption>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<img src="image/png/1-5.png" align="middle" width="400px" />
+
+					</td>
+					<td>
+						<img src="image/png/1-6.png" align="middle" width="400px" />
+
+					</td>
+				</tr>
+			</table>
+		</div>
+
+
+		<h3 align="middle">Part 2: Bezier surfaces with separable 1D de Casteljau subdivision</h3>
+		<p>
+			Bezier interpolation can easily extend to higher dimensions. All it takes is one parameter per dimension. To find a point (u,v) on a bezier surface, a grid of control points is evaluated one dimensionally in the u direction with the u parameter, then the output of those interpolations is evaluated again in the v direction with v parameter. The result is a single point anywhere on the surface.
+		</p>
+
+		<div align="middle">
+			<table style="width=100%">
+				<tr>
+					<td>
+						<img src="image/png/2-2.png" align="middle" width="400px" />
+						<figcaption align="middle">Before</figcaption>
+					</td>
+					<td>
+						<img src="image/png/2-1.png" align="middle" width="400px" />
+						<figcaption align="middle">After</figcaption>
+					</td>
+				</tr>
+			</table>
+		</div>
+
+		<h2 align="middle">Section II: Sampling</h2>
+
+		<h3 align="middle">Part 3: Average normals for half-edge meshes</h3>
+
+		<p>
+			I implemented the area-weighted vertex normals calculation by accumulating the normals of all adjacent faces of a vertex, multiplied by their area, and then normalizing the result. There is actually a nice shortcut that I took in this computation. For a triangle, the cross product of ab and ac is a vector that is in the triangle's normal direction and that is proportional to the area of the triangle. This means that one can just accumulate and normalize the cross product of the edges of all adjacent sides to a vertex and the result will be the area weighted normal.
+		</p>
+
+		<div align="middle">
+			<table style="width=100%">
+				<tr>
+					<td>
+						<img src="image/png/3-1.png" align="middle" width="400px" />
+						<figcaption align="middle">Before</figcaption>
+					</td>
+					<td>
+						<img src="image/png/3-2.png" align="middle" width="400px" />
+						<figcaption align="middle">After</figcaption>
+					</td>
+				</tr>
+			</table>
+		</div>
+
+		<h3 align="middle">Part 4: Half-edge flip</h3>
+
+		<p>
+			I implemented the edge flip operation by creating a variable that points to each feature of the mesh in the affected area. I then re-assigned all of the pointers that these objects contain to point to their new destination. I found this part relatively straightforward and had no bugs.
+		</p>
+
+		<div align="middle">
+			<table style="width=100%">
+				<img src="image/png/4-1.png" align="middle" width="400px" />
+				<figcaption align="middle">Before</figcaption>
+			</table>
+		</div>
+
+		<h3 align="middle">Part 5: Half-edge split</h3>
+
+		<p>
+			I did edge split much in the same way as I did edge flip. On my first attempt, I tried deleting old mesh elements and replacing them with new ones. This worked, but when I made it to part 6, it caused issues because I was modifying the object buffers as I was iterating through them. Because of this I changed my implementation to repurpose old objects instead of deleting and replacing them. I also implemented the extra credit for part 5 with a function that handles splitting boundary edges. This turned out to be quite simple after looking into the isBoundery() functions.
+		</p>
+		<div align="middle">
+			<table style="width=100%">
+				<tr>
+					<td>
+						<img src="image/png/5-0.png" align="middle" width="400px" />
+						<figcaption align="middle">Original Mesh</figcaption>
+					</td>
+					<td>
+						<img src="image/png/5-1.png" align="middle" width="400px" />
+						<figcaption align="middle">Split Edges</figcaption>
+					</td>
+				</tr>
+				<br />
+				<tr>
+					<td>
+						<img src="image/png/5-2.png" align="middle" width="400px" />
+						<figcaption align="middle">Fliped Edges</figcaption>
+					</td>
+				</tr>
+			</table>
+		</div>
+
+		<h3 align="middle">Part 6: Loop subdivision for mesh upsampling</h3>
+
+		<p>
+			I implemented loop subdivision by first calculating the new vertex positions that are associated with every vertex and every edge. For extra credit, I even calculated the new vertex positions for boundary edges using bezier curves along mesh boundaries. I then split all edges and flipped any that are touching exactly one new vertex. Finally I moved each vertex into its new position and marked all vertices and edges as old.
+
+
+		</p>
+		<p>
+			A side effect of loop subdivision is that sharp edges get rounded. Convex edges are clipped and lose volume and concave edges gain volume. One way to prevent this is to unweld mesh edges in areas where the sharp corner desired. Unwelding an edge is essentially considering it as a boundary edge and not letting the subdivision happen across the edge. Side effects can also be mitigated by subdividing edges that are not on corners first or just by starting with a higher resolution mesh.
+		</p>
+		<div align="middle">
+			<table style="width=100%">
+				<tr>
+					<td>
+						<img src="image/png/6-1.png" align="middle" width="400px" />
+						<figcaption align="middle">Original Mesh</figcaption>
+					</td>
+					<td>
+						<img src="image/png/6-2.png" align="middle" width="400px" />
+						<figcaption align="middle">Split Edges</figcaption>
+					</td>
+				</tr>
+				<br />
+				<tr>
+					<td>
+						<img src="image/png/6-3.png" align="middle" width="400px" />
+						<figcaption align="middle">Fliped Edges</figcaption>
+					</td>
+				</tr>
+			</table>
+		</div>
+
+		<h2 align="middle">Section III: Optional Extra Credit</h2>
+
+		<h3 align="middle">Part 7: Design your own mesh!</h3>
+
+		<p>
+			I tried to do part 7 the way that was instructed but for some reason the program would not open the dae files that I exported from blender. I am however an architecture student and so I am very familiar with CAD software. In hopes of still getting extra credit for part 7. I created my own mesh model in Rhino, then completed a few iterations of Catmull-Clark subdivision using the Weaverbird mesh editing plugin for Grasshopper which is itself a plugin for Rhino. I made sure to unweld edges that I want to remain sharp, and weld all edges that I wanted smooth. I then rendered the final subdivided mesh with a few different effects. I saved both and stl and a dae version of my model in docs because the dae wouldn't open.
+		</p>
+
+		<div align="middle">
+			<table style="width=100%">
+				<tr>
+					<td>
+						<img src="image/png/7-0.png" align="middle" width="400px" />
+						<figcaption align="middle">0 sub divisions</figcaption>
+					</td>
+					<td>
+						<img src="image/png/7-1.png" align="middle" width="400px" />
+						<figcaption align="middle">1 subdivision</figcaption>
+					</td>
+				</tr>
+				<br />
+				<tr>
+					<td>
+						<img src="image/png/7-2.png" align="middle" width="400px" />
+						<figcaption align="middle">2 subdivisions</figcaption>
+					</td>
+					<td>
+						<img src="image/7-3.JPG" align="middle" width="400px" />
+						<figcaption align="middle">rendered</figcaption>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<img src="image/png/7-4.png" align="middle" width="400px" />
+						<figcaption align="middle">rendered</figcaption>
+					</td>
+				</tr>
+			</table>
+		</div>
+	</div>
+</body>
+
 </html>
