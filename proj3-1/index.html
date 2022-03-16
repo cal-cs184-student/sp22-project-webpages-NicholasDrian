@@ -1,7 +1,253 @@
-<html>
-	<head>
-	</head>
-	<body>
-		Project 3-1 here
-	</body>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>  
+    div.padded {  
+      padding-top: 0px;  
+      padding-right: 100px;  
+      padding-bottom: 0.25in;  
+      padding-left: 100px;  
+    }  
+  </style> 
+<title>Nick Drian  |  CS 184</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" type="text/css" href="style.css" media="screen" />
+</head>
+<body>
+<br />
+<h1 align="middle">Assignment 3: PathTracer</h1>
+    <h2 align="middle">Nick Drian</h2>
+
+    <div class="padded">
+        <p>In this project, I implemented a path tracer and many of the optimizations required to make it practical. I first generated rays leaving the camera and implemented the functionality for finding the first intersection between these rays and the scene. I then Implemented a bounding box hierarchy to bring the number of intersection tests per ray down from one intersection test per object in the scene to one intersection test per log of the number of objects in the scene. This optimization allowed me to render larger meshes in a matter of seconds that would have previously taken days. Next I implemented functions for calculating the zero bounce, one bounce, and at least once bounce radiance emitted from any given intersection. I initially calculated direct lighting using uniform sampling, but that method yields noisy results and so I then went on to implement importance sampling. Lastly, i implemented adaptive sampling in order to focus computation on cleaning up the noisier parts of the image. </p>
+        <p>
+            Debugging this assignment was convenient due to the unique ability of visualizing bugs when writing this sort of code. On the other hand, most of the programming was mathematical in nature which caused lots of numerical calculation bugs. Working through issues with my linear algebra and monte carlo integration helped cement my conceptual understanding of formulas that I previously took for granted.
+        </p>
+        <o>
+
+
+            <h2 align="middle">Part 1: Ray Generation and Intersection</h2>
+            <p>The very first step in the creation of my path tracer was to create the initial rays that project from the virtual camera's center, through each pixel on an image plane, and into the scene. It was a simple matter of taking a point at the center of each pixel on the image plane and subtracting away the camera's center in order to get a direction vector. This vector is then normalized and used as the direction of the ray corresponding to the pixel on the camera screen. To increase image quality and prevent aliasing from undersampling, I then enhanced this approach by averaging many rays that each travel through a random point within the domain of a single pixel. To debug the ray generation algorithm that I created, I visualized the direction of each ray by mapping different directions to different colors and then producing an image of the result. </p>
+            <p>Next, in order to actually render a scene, I implemented functions that intersect rays with various geometry in order to find the nearest unobstructed intersection.  First I implemented a ray-triangle intersection function. This function first checks if a ray intersects the triangle at all by making sure that the ray is projecting on the correct side of three different planes. The ray begins at point P and the triangles consist of points A, B, and C. To make sure that the ray intersects the triangle one simply has to make sure that it is on the correct side of the planes defined by the points A, B, P, the points B, C, P and the points C, A, P. One can be sure that the ray is on the correct side of these planes if the dot product of the ray direction and the plane normal is positive. Each plane normal can be computed by simply calculating the cross product of p2 - p1 and p3 - p1. After determining that a ray intersects a triangle, the point of intersection is simply calculated by intersecting the ray with the plane that is defined by the triangle. Then, the normal is calculated by taking the weighted average of the three vertex normals with respect to the normalized area of the part of the triangle directly opposite from each vertex. I also implemented ray sphere intersection which was much simpler because of the convenient implicit representation of spheres. </p>
+            <div align="center">
+                <table style="width=100%">
+                    <br />
+                    <tr>
+                        <td>
+                            <img src="images/1-1.png" align="middle" width="400px" />
+                            <figcaption align="middle">Cornell Box Spheres</figcaption>
+                        </td>
+                        <td>
+                            <img src="images/1-2.png" align="middle" width="400px" />
+                            <figcaption align="middle">Bouncy Bunny</figcaption>
+                        </td>
+                    </tr>
+                    <br />
+                </table>
+            </div>
+
+
+            <h2 align="middle">Part 2: Bounding Volume Heirarchy</h2>
+
+            <p>
+                My bounding volume hierarchy splits the scene in half at each level until there are less than or equal to max_leaf_size items per node. My algorithm works by randomly selecting a dimension, X, Y or Z, at each node and then dividing that node's objects into equally sized groups in the selected dimension. This gives me O Log(N) complexity for finding the first intersection between a ray and N objects. The speed up was very noticeable with large meshes. Maxplanck.dae for example took about 7.5 minutes to render without BVH acceleration and had an average of 40,600 intersection tests per ray. With BVH acceleration on the other hand, the mesh only took 0.33 seconds to render and used an average of 17.5 intersection checks per ray.
+            </p>
+
+            <div align="center">
+                <table style="width=100%">
+                    <br />
+                    <tr>
+                        <td>
+                            <img src="images/2-1.png" align="middle" width="400px" />
+                            <figcaption align="middle">Max Planck</figcaption>
+                        </td>
+                        <td>
+                            <img src="images/2-2.png" align="middle" width="400px" />
+                            <figcaption align="middle">Cornell Box Lucy</figcaption>
+                        </td>
+                    </tr>
+                    <br />
+                </table>
+            </div>
+
+            <h2 align="middle">Part 3: Direct Ilumination</h2>
+
+            <p>
+                In order to simulate direct lighting, I implemented two methods; uniform hemisphere sampling and importance sampling. In order to perform uniform hemisphere sampling, I calculated the average outgoing radiance corresponding to many random incoming light rays. I did this by first creating a random incoming light ray. This was simply done by placing a bounding box around a hemisphere, randomly generating a point within the bounding box, ensuring that the point is within the hemisphere as well, and then calculating the normalized vector corresponding to the generated point. Next, I find the nearest intersection between the random incoming ray and the scene and use the emission at that intersection to calculate the outgoing radiance from the original intersection. This random hemisphere sampling is an example of unbiased monte carlo integration and will converge on the correct result. The issue is that the result is fairly noisy. This noisiness can be decreased using importance sampling which makes the result converge quicker. The idea behind importance sampling is that some areas in the sample domain contribute more to the final result and thus they should be sampled more frequently. I implemented importance sampling by averaging the result of sampling each light in the scene directly, and to keep my results unbiased, I then divided each sample by the probability of sampling that particular direction. This method also allows for a new kind of light called a point light which would ordinarily never be sampled due the fact that it has no size.
+            </p>
+            <p>
+                When testing my results, importance sampling created a perfect image far quicker than uniform hemisphere sampling. This is because every ray that does not hit a light source is wasted computation, and in most scenes, most rays do not hit light sources. Soft shadows are where the noisiness is most pronounced, and where importance sampling blows uniform sampling out of the water. This is because intersections that are in soft shadows have a small but non zero probability of any randomly chosen incoming light ray being from a light source. This means it takes many uniform samples of an intersection in soft shadow before a sample will eventually hit a light, and many more random samples before the result will converge. On the other hand, importance sampling only sends rays in the direction of lights and the odds of hitting a light from a soft shadow are far greater.
+            </p>
+
+            <div align="center">
+                <table style="width=100%">
+                    <br />
+                    <tr>
+                        <td>
+                            <img src="images/3-1-I.png" align="middle" width="400px" />
+                            <figcaption align="middle">Importance sampling - 1 sample per light</figcaption>
+                        </td>
+                        <td>
+                            <img src="images/3-4-I.png" align="middle" width="400px" />
+                            <figcaption align="middle">Importance sampling - 4 samples per light</figcaption>
+                        </td>
+                    </tr>
+                    <br />
+                    <tr>
+                        <td>
+                            <img src="images/3-16-I.png" align="middle" width="400px" />
+                            <figcaption align="middle">Importance sampling - 16 samples per light</figcaption>
+                        </td>
+                        <td>
+                            <img src="images/3-64-I.png" align="middle" width="400px" />
+                            <figcaption align="middle">Importance sampling - 64 samples per light</figcaption>
+                        </td>
+                    </tr>
+                    <br />
+                    <tr>
+                        <td>
+                            <img src="images/3-4-H.png" align="middle" width="400px" />
+                            <figcaption align="middle">Uniform sampling - 4 samples per pixel</figcaption>
+                        </td>
+                        <td>
+                            <img src="images/3-64-H.png" align="middle" width="400px" />
+                            <figcaption align="middle">Uniform sampling - 64 samples per pixel</figcaption>
+                        </td>
+                    </tr>
+                    <br />
+                </table>
+            </div>
+
+            <h2 align="middle">Part 4: Global Ilumination</h2>
+
+            <p>
+                I implemented indirect illumination with a simple recursive algorithm. The base case of this algorithm is when max ray depth has been reached or a path randomly terminates, and in this case the function simply returns zero and one bounce radiance. Otherwise, the function returns zero bounce radiance, plus one bounce radiance, plus the radiance resulting from a recursive call to this function using a ray and intersection that are generated by importance sampling the BSDF. Radiance calculated using recursion must be divided by the continuation probability to ensure the result remains non biased.
+            </p>
+
+            <div align="center">
+                <table style="width=100%">
+                    <br />
+                    <tr>
+                        <td>
+                            <img src="images/4-indirect.png" align="middle" width="400px" />
+                            <figcaption align="middle">Indirect Lighting Only</figcaption>
+                        </td>
+                        <td>
+                            <img src="images/4-1.png" align="middle" width="400px" />
+                            <figcaption align="middle">Direct Lighting Only</figcaption>
+                        </td>
+                    </tr>
+                    <br />
+                    <tr>
+                        <td>
+                            <img src="images/4-0.png" align="middle" width="400px" />
+                            <figcaption align="middle">Cornell Box Bunny - Max Ray Depth 0</figcaption>
+                        </td>
+                        <td>
+                            <img src="images/4-1.png" align="middle" width="400px" />
+                            <figcaption align="middle">Cornell Box Bunny - Max Ray Depth 1</figcaption>
+                        </td>
+                    </tr>
+                    <br />
+                    <tr>
+                        <td>
+                            <img src="images/4-2.png" align="middle" width="400px" />
+                            <figcaption align="middle">Cornell Box Bunny - Max Ray Depth 2</figcaption>
+                        </td>
+                        <td>
+                            <img src="images/4-3.png" align="middle" width="400px" />
+                            <figcaption align="middle">Cornell Box Bunny - Max Ray Depth 3</figcaption>
+                        </td>
+                    </tr>
+                    <br />
+                    <tr>
+                        <td>
+                            <img src="images/4-100.png" align="middle" width="400px" />
+                            <figcaption align="middle">Cornell Box Bunny - Max Ray Depth 100</figcaption>
+                        </td>
+                    </tr>
+                    <br />
+                    <tr>
+                        <td>
+                            <img src="images/4-1-s.png" align="middle" width="400px" />
+                            <figcaption align="middle">Dragon - 1 sample per pixel</figcaption>
+                        </td>
+                        <td>
+                            <img src="images/4-2-s.png" align="middle" width="400px" />
+                            <figcaption align="middle">Dragon - 2 samples per pixel</figcaption>
+                        </td>
+                    </tr>
+                    <br />
+                    <tr>
+                        <td>
+                            <img src="images/4-4-s.png" align="middle" width="400px" />
+                            <figcaption align="middle">Dragon - 4 samples per pixel</figcaption>
+                        </td>
+                        <td>
+                            <img src="images/4-8-s.png" align="middle" width="400px" />
+                            <figcaption align="middle">Dragon - 8 samples per pixel</figcaption>
+                        </td>
+                    </tr>
+                    <br />
+                    <tr>
+                        <td>
+                            <img src="images/4-16-s.png" align="middle" width="400px" />
+                            <figcaption align="middle">Dragon - 16 samples per pixel</figcaption>
+                        </td>
+                        <td>
+                            <img src="images/4-64-s.png" align="middle" width="400px" />
+                            <figcaption align="middle">Dragon - 64 samples per pixel</figcaption>
+                        </td>
+                    </tr>
+                    <br />
+                    <tr>
+                        <td>
+                            <img src="images/4-1024-s.png" align="middle" width="400px" />
+                            <figcaption align="middle">Dragon - 1024 samples per pixel</figcaption>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <h2 align="middle">Part 5: Adaptive Sampling</h2>
+
+            <p>
+                Adaptive sampling is a method that uses statistical analysis to terminate sampling when the error of the result drops below an acceptable threshold. To implement adaptive sampling, I kept a running sum of the result of each sample and the square of the result of each sample. Using this information, after each batch of samples, the confidence interval can be calculated, and if it is acceptable, sampling can terminate early. This saves lots of time on samples that converge early, and focuses efforts on the more chaotic portions of the image.
+
+            </p>
+
+            <div align="center">
+                <table style="width=100%">
+                    <br />
+                    <tr>
+                        <td>
+                            <img src="images/5-1.png" align="middle" width="400px" />
+                            <figcaption align="middle">Beast</figcaption>
+                        </td>
+                        <td>
+                            <img src="images/5-1_rate.png" align="middle" width="400px" />
+                            <figcaption align="middle">Red = Most Samples, Blue = Least Samples</figcaption>
+                        </td>
+                    </tr>
+                    <br />
+                    <tr>
+                        <td>
+                            <img src="images/5-2.png" align="middle" width="400px" />
+                            <figcaption align="middle">Bunny</figcaption>
+                        </td>
+                        <td>
+                            <img src="images/5-2_rate.png" align="middle" width="400px" />
+                            <figcaption align="middle">Red = Most Samples, Blue = Least Samples</figcaption>
+                        </td>
+                    </tr>
+                    <br />
+                </table>
+            </div>
+        </o>
+    </div>
+</body>
 </html>
+
+
+
+
