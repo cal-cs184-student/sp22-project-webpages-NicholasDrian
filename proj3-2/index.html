@@ -1,7 +1,150 @@
-<html>
-	<head>
-	</head>
-	<body>
-		Project 3-2 here
-	</body>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>  
+    div.padded {  
+      padding-top: 0px;  
+      padding-right: 100px;  
+      padding-bottom: 0.25in;  
+      padding-left: 100px;  
+    }  
+  </style> 
+<title>Nick Drian  |  CS 184</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" type="text/css" href="style.css" media="screen" />
+</head>
+<body>
+<br />
+<h1 align="middle">Assignment 3-2: PathTracer</h1>
+    <h2 align="middle">Nick Drian</h2>
+
+    <div class="padded">
+        <p>In this portion of the ray tracing project, I implemented a couple of new materials as well as a thin lense depth of field effect. It was cool to see how simply some great effects can be added once the basic ray tracing is complete. It did not take many lines of code to create reflection, refraction, and thin lense simulation; though the code that I did write felt fairly advanced and took some time to implement.</p>
+        <o>
+
+            <h2 align="middle">Part 1: Miror and Glass Materials</h2>
+            <p>Part one of the project was where I implemented BRDFs for reflective and refractive materials. The reflective brdf was a very simple case. PDF calculations were not required due to the fact that reflection is a special case. All that really had to be done for this part is a calculation of the the reflected direction vector. The next part, refraction, was a bit more involved. The way that light refracts is not intuative for me so this part felt a bit like blindely plugging in math equasions. That being said, the process helped me gain intuition as to how light behaves at the interface of two mediums with different refractive indecies. After implementing an algorithm for calculating the direction of refracted light using Snell's law, I handled the edge case of total internal reflection by recycling code from earlier in this part.</p>
+
+
+
+            <div align="center">
+                <table style="width=100%">
+                    
+                    <br />
+                    <tr>
+                        <td>
+                            <img src="images/spheres_0_bounce.png" align="middle" width="400px" />
+                            <figcaption align="middle">O bounces</figcaption>
+                        </td>
+                        <td>
+                            <img src="images/spheres_1_bounce.png" align="middle" width="400px" />
+                            <figcaption align="middle">1 bounce</figcaption>
+                        </td>
+                    </tr>
+                    <br />
+                    <tr>
+                        <td>
+                            <img src="images/spheres_2_bounce.png" align="middle" width="400px" />
+                            <figcaption align="middle">2 bounces</figcaption>
+                        </td>
+                        <td>
+                            <img src="images/spheres_3_bounce.png" align="middle" width="400px" />
+                            <figcaption align="middle">3 bounces</figcaption>
+                        </td>
+                    </tr>
+                    <br />
+                    <tr>
+                        <td>
+                            <img src="images/spheres_4_bounce.png" align="middle" width="400px" />
+                            <figcaption align="middle">4 bounces</figcaption>
+                        </td>
+                        <td>
+                            <img src="images/spheres_5_bounce.png" align="middle" width="400px" />
+                            <figcaption align="middle">5 bounces</figcaption>
+                        </td>
+                    </tr>
+                    <br />
+                    <tr>
+                        <td>
+                            <img src="images/spheres_100_bounce.png" align="middle" width="400px" />
+                            <figcaption align="middle">100 bounces</figcaption>
+                        </td>
+                    </tr>
+                    <br />
+                </table>
+            </div>
+
+            <h2 align="middle">Part 4: Depth of Field</h2>
+
+            <p>
+                In this part of the assignment, I implemented a thin lense camera simulation. This was done in a few steps. First, I calculated the focal point of all of the rays corresponding to a simgle pixel. This was done by intersecting the original pinhole ray with the depth of focus plane. I then produced rays that originate at random points on the cameras lense and pointing in the direction of the previously calculated focal point. These are the final rays that are needed to sample the scene from as an ideal thin lense camera would. This part went fairly smoothly aside form some world-space and camera-space mixups. 
+            </p>
+
+            <div align="center">
+                <table style="width=100%">
+                    <br />
+                    <tr>
+                        <td>
+                            <figcaption align="middle">The left column maintains a constant apature size of 1,</figcaption>
+                            <figcaption align="middle">and varies the depth.</figcaption>
+                        </td>
+                        <td>
+                            <figcaption align="middle">The right column maintains a constant depth of 1.15 and,</figcaption>
+                            <figcaption align="middle">and varies apature size.</figcaption>
+                        </td>
+                    </tr>
+                    <br />
+                    <tr>
+                        <td>
+                            <img src="images/dragon_1_1.png" align="middle" width="400px" />
+                            <figcaption align="middle">Depth 1</figcaption>
+                        </td>
+                        <td>
+                            <img src="images/dragon_01_115.png" align="middle" width="400px" />
+                            <figcaption align="middle">Apature size 0.01</figcaption>
+                        </td>
+                    </tr>
+                    <br />
+                    <tr>
+                        <td>
+                            <img src="images/dragon_1_125.png" align="middle" width="400px" />
+                            <figcaption align="middle">Depth 1.25</figcaption>
+                        </td>
+                        <td>
+                            <img src="images/dragon_05_115.png" align="middle" width="400px" />
+                            <figcaption align="middle">Apature size 0.05</figcaption>
+                        </td>
+                    </tr>
+                    <br />
+                    <tr>
+                        <td>
+                            <img src="images/dragon_1_15.png" align="middle" width="400px" />
+                            <figcaption align="middle">Depth 1.5</figcaption>
+                        </td>
+                        <td>
+                            <img src="images/dragon_1_115.png" align="middle" width="400px" />
+                            <figcaption align="middle">Apature size 0.1</figcaption>
+                        </td>
+                    </tr>
+                    <br />
+                    <tr>
+                        <td>
+                            <img src="images/dragon_1_175.png" align="middle" width="400px" />
+                            <figcaption align="middle">Depth 1.75</figcaption>
+                        </td>
+                        <td>
+                            <img src="images/dragon_2_115.png" align="middle" width="400px" />
+                            <figcaption align="middle">Apature size 0.2</figcaption>
+                        </td>
+                    </tr>
+                    <br />
+                </table>
+            </div>
+
+        </o></div>
+</body>
 </html>
+
+
+
+
