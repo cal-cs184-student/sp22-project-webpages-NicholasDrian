@@ -1,7 +1,383 @@
-<html>
-	<head>
-	</head>
-	<body>
-		Project 4 here
-	</body>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>
+  body {
+    padding: 100px;
+    width: 1000px;
+    margin: auto;
+    text-align: left;
+    font-weight: 300;
+    font-family: 'Open Sans', sans-serif;
+    color: #121212;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+</style>
+<title>CS 184 Mesh Editor</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+</head>
+
+
+<body>
+
+<h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2022</h1>
+<h1 align="middle">Project 4: Cloth Simulator</h1>
+<h2 align="middle">Nick Drian, CS184-Spring2022</h2>
+
+<br><br>
+
+    <div>
+
+        <h2 align="middle">Overview</h2>
+        <p>In this project, I familiarized myself with some tequneaks of physical simulations as well as the general graphics pipeline. Using real time cloth simulation and shaders, I was able to render impressive fabric models and their physical interactions with the virtual world. </p>
+
+        <h2 align="middle">Part 1: Masses and springs</h2>
+
+        <p>
+            In this part of the project, I assembled cloth from point masses and springs. I used a variety of spring orientations to produce tensile, compressive, shear, and bending resistance to the fabric. A simple 2D grid of springs privided the basic structure. Diaganal springs were added for shear strength and long springs that span two grid cells were added to resist bending.
+        </p>
+
+        <div align="center">
+            <table style="width=100%">
+                <br />
+                <tr>
+                    <td>
+                        <img src="images/grid.png" align="middle" width="400px" />
+                        <figcaption align="middle">Structural</figcaption>
+                    </td>
+                    <td>
+                        <img src="images/shear.png" align="middle" width="400px" />
+                        <figcaption align="middle">Shear</figcaption>
+                    </td>
+                </tr>
+                <br />
+                <tr>
+                    <td>
+                        <img src="images/gridAndShear.png" align="middle" width="400px" />
+                        <figcaption align="middle">Structural and Shear</figcaption>
+                    </td>
+                    <td>
+                        <img src="images/gridCorner.png" align="middle" width="400px" />
+                        <figcaption align="middle">Close Up</figcaption>
+                    </td>
+                </tr>
+                <br />
+            </table>
+        </div>
+
+        <h2 align="middle">Part 2: Simulation via numerical integration</h2>
+
+        <p>
+            In this part of the project, I simulated the physics of the spring and mass model from part 1. I did this by first summing external forces such as gravity, and internal spring forces for each point mass in the model. I then calculated the new position of each point mass using its current velocity and all of the agragate forces. The last step in the simulation was to constrain vertex positions to prevent springs from over extending.
+        </p>
+        <p>
+            When the spring constant is large, the cloth holds its form and looks more rigid. When denisty is large, it counteracts stiffer springs by making the fabric heavier. As shown in the bottom two pictures, weak springs and increased density seem to have a very similar effect. When dampening is increased, momentum is disapated and the cloth falls slowly and comes to rest gently. When dampening is zero on the other hand. The cloth keeps swinging. This is depicted in the last picture.
+        </p>
+
+        <div align="center">
+            <table style="width=100%">
+                <br />
+                <tr>
+                    <td>
+                        <img src="images/Pinned4.png" align="middle" width="400px" />
+                        <figcaption align="middle">Pinned on 4 corners</figcaption>
+                    </td>
+                    <td>
+                        <img src="images/Pinned2.png" align="middle" width="400px" />
+                        <figcaption align="middle">Pinned on 2 corners</figcaption>
+                    </td>
+                </tr>
+                <br />
+                <tr>
+                    <td>
+                        <img src="images/Pinned2Heavy.png" align="middle" width="400px" />
+                        <figcaption align="middle">High Density</figcaption>
+                    </td>
+                    <td>
+                        <img src="images/Pinned2Weak.png" align="middle" width="400px" />
+                        <figcaption align="middle">Weak Springs</figcaption>
+                    </td>
+                </tr>
+                <br />
+                <tr>
+                    <td>
+                        <img src="images/swing.png" align="middle" width="400px" />
+                        <figcaption align="middle">Swinging from no dampening</figcaption>
+                    </td>
+                   
+                </tr>
+            </table>
+        </div>
+
+        <h2 align="middle">Part 3: Handling collisions with other objects</h2>
+
+        <p>
+            In this part, I added the physics of colisions. This was done simply for the sphere by not letting cloth points get closer than a constant distance from its center. For the plane, this was done by not letting points cross to the other side of a plane over each time step.
+        </p>
+        <p>
+            In the images below, the spring constant is varied. This demonstrates how a small spring constant allows tighter bending of the cloth, and a large spring constant seems to give the cloth a more rigid and unbending structure.
+        </p>
+
+        <div align="center">
+            <table style="width=100%">
+                <br />
+                <tr>
+                    <td>
+                        <img src="images/sphere50.png" align="middle" width="400px" />
+                        <figcaption align="middle">ks = 50</figcaption>
+                    </td>
+                    <td>
+                        <img src="images/sphere500.png" align="middle" width="400px" />
+                        <figcaption align="middle">ks = 500</figcaption>
+                    </td>
+                </tr>
+                <br />
+                <tr>
+                    <td>
+                        <img src="images/sphere5000.png" align="middle" width="400px" />
+                        <figcaption align="middle">ks = 5000</figcaption>
+                    </td>
+                    <td>
+                        <img src="images/sphere50000.png" align="middle" width="400px" />
+                        <figcaption align="middle">ks = 50000</figcaption>
+                    </td>
+                </tr>
+                <br />
+                <tr>
+                    <td>
+                        <img src="images/plane.png" align="middle" width="400px" />
+                        <figcaption align="middle">Lying restfuly on the plane</figcaption>
+                    </td>
+                </tr>
+                <br />
+            </table>
+        </div>
+
+        <h2 align="middle">Part 4: Handling self-collisions</h2>
+
+        <p>
+            In this part of the project, I used a spatial hashing function to handle self colision. I created a hash function that maps proximal point masses to the same hash. This allows me to quickly identify and correct points that risk causing self intersection of the cloth.
+        </p>
+        <p>
+            The below are simulations of the cloth with default settings, with strong springs, and with heavy point masses. It can be seen that strong springs creates much more uniform folding and that heavy point masses cause more chaotic folding.
+        </p>
+
+        <div align="center">
+            <table style="width=100%">
+                <br />
+                <tr>
+                    <td>
+                        <img src="images/sc1.png" align="middle" width="400px" />
+                        <figcaption align="middle">time 0</figcaption>
+                    </td>
+                    <td>
+                        <img src="images/sc2.png" align="middle" width="400px" />
+                        <figcaption align="middle">time 1</figcaption>
+                    </td>
+                </tr>
+                <br />
+                <tr>
+                    <td>
+                        <img src="images/sc3.png" align="middle" width="400px" />
+                        <figcaption align="middle">time 2</figcaption>
+                    </td>
+                    <td>
+                        <img src="images/sc4.png" align="middle" width="400px" />
+                        <figcaption align="middle">time 3</figcaption>
+                    </td>
+                </tr>
+                <br />
+                <tr>
+                    <td>
+                        <img src="images/scweak1.png" align="middle" width="400px" />
+                        <figcaption align="middle">Strong springs</figcaption>
+                    </td>
+                    <td>
+                        <img src="images/scweak2.png" align="middle" width="400px" />
+                        <figcaption align="middle">Strong springs</figcaption>
+                    </td>
+                </tr>
+                <br />
+                <tr>
+                    <td>
+                        <img src="images/scstrong1.png" align="middle" width="400px" />
+                        <figcaption align="middle">Heavy point masses</figcaption>
+                    </td>
+                    <td>
+                        <img src="images/scstrong2.png" align="middle" width="400px" />
+                        <figcaption align="middle">Heavy point masses</figcaption>
+                    </td>
+                </tr>
+                <br />
+            </table>
+        </div>
+
+        <h2 align="middle">Part 5: Shaders</h2>
+
+        <p>
+            In this part of the project, I programed the graphics processor using shader programs. Specifically I wrote vertex and fragment shaders in a language called GLSL which is similar to C but designed for the GPU not the CPU. Vertex shaders are for paralelized modifications to vertex positions and for spawning inputs to further stages down the graphics pipeline. The fragment shader often takes inputs from the vertex shader such as interpolated texture coordinates and normals and uses these to produce per pixel colors. in this part, I implemented a variety of shaders which produce a great assortment of real time material renderings.
+        </p>
+        <p>
+            One of the first shaders that I implemented was a blinn-phong shader. This shader uses a weighted average of ambient lighting, diffuse lighting and specular lighting to simulate materiality. The ambient component is added evenly to all pixels of the material. The diffuse component factors in the proximity and incident angle of the light. And lastly, the specular component uses the position of the camera and the position of the light to calculate transmission due to specular reflection.
+        </p>
+
+        <div align="center">
+            <table style="width=100%">
+                <br />
+                <tr>
+                    <td>
+                        <img src="images/sphereAmbient.png" align="middle" width="400px" />
+                        <figcaption align="middle">Ambient Component</figcaption>
+                    </td>
+                    <td>
+                        <img src="images/sphereDiffuse.png" align="middle" width="400px" />
+                        <figcaption align="middle">Diffuse Component</figcaption>
+                    </td>
+                </tr>
+                <br />
+                <tr>
+                    <td>
+                        <img src="images/sphereSpecular.png" align="middle" width="400px" />
+                        <figcaption align="middle">Specular Component</figcaption>
+                    </td>
+                    <td>
+                        <img src="images/sphereGrey.png" align="middle" width="400px" />
+                        <figcaption align="middle">All Components</figcaption>
+                    </td>
+                </tr>
+                <br />
+                <tr>
+                    <td>
+                        <img src="images/sphereGold.png" align="middle" width="400px" />
+                        <figcaption align="middle">Gold</figcaption>
+                    </td>
+                    <td>
+                        <img src="images/sphereBlue.png" align="middle" width="400px" />
+                        <figcaption align="middle">Blue</figcaption>
+                    </td>
+                </tr>
+                <br />
+            </table>
+        </div>
+
+        <p>
+            Next I implemented texture mapping. Shown below is a Nirvana Baby inspired fabric texture.
+        </p>
+
+        <div align="center">
+            <table style="width=100%">
+                <br />
+                <tr>
+                    <td>
+                        <img src="images/sphereTexture.png" align="middle" width="400px" />
+                        <figcaption align="middle">Nirvana Baby</figcaption>
+                    </td>
+                </tr>
+                <br />
+            </table>
+        </div>
+
+        <p>
+            Next I implemented bump mapping and displacement mapping. As it is shown below, bump mapping creates the illusion of bumpy texture by changing the normal direction of the surface. Displacement mapping on the other hand uses a vertex shader to calculate new vertex positions and create bumps on the mesh. The resolution of the sphere also plays a role in the quality of its texture. As shown below, when the resolution is 16 the spheres shape is corse and lacks detail. When the resolution is 128 on the other hand, the speres displacement matches the texture exactly and the round sphere becomes perfectly curved.
+        </p>
+
+        <div align="center">
+            <table style="width=100%">
+                <br />
+                <tr>
+                    <td>
+                        <img src="images/spherebump1.png" align="middle" width="400px" />
+                        <figcaption align="middle">Bump Mapping</figcaption>
+                    </td>
+                    <td>
+                        <img src="images/spherebump2.png" align="middle" width="400px" />
+                        <figcaption align="middle">Bump Mapping</figcaption>
+                    </td>
+                </tr>
+                <br />
+                <tr>
+                    <td>
+                        <img src="images/spheredisp1.png" align="middle" width="400px" />
+                        <figcaption align="middle">Displacement Mapping</figcaption>
+                    </td>
+                    <td>
+                        <img src="images/spheredisp2.png" align="middle" width="400px" />
+                        <figcaption align="middle">Displacement Mapping</figcaption>
+                    </td>
+                </tr>
+                <br />
+                <tr>
+                    <td>
+                        <img src="images/res16.png" align="middle" width="400px" />
+                        <figcaption align="middle">Resolution 16 Sphere Bump Mapping</figcaption>
+                    </td>
+                    <td>
+                        <img src="images/res16disp.png" align="middle" width="400px" />
+                        <figcaption align="middle">Resolution 16 Sphere Displacement Mapping</figcaption>
+                    </td>
+                </tr>
+                <br />
+                <tr>
+                    <td>
+                        <img src="images/res128.png" align="middle" width="400px" />
+                        <figcaption align="middle">Resolution 128 Sphere Bump Mapping</figcaption>
+                    </td>
+                    <td>
+                        <img src="images/res128disp.png" align="middle" width="400px" />
+                        <figcaption align="middle">Resolution 128 Sphere Displacement Mapping</figcaption>
+                    </td>
+                </tr>
+                <br />
+            </table>
+        </div>
+
+        <h2 align="middle">Extra credit: Wind!</h2>
+
+        <p>
+            In this portion of of the project, I expiramented with wind generation. First, this involved enhancing the GUI to support a toggle to turn wind on and off. I then created input fields for wind speed and wind direction. This was a great intro into C++ GUI's, something that I have no previous experience with. Next, in the Cloth::Simulate function, I created random perlin noise, multiplied it by wind direction, wind speed, and the dot product of each surface normal, and then applied forces corespondingly. Verlet integration that I implemented earlier took care of the rest.
+        </p>
+
+        <div align="center">
+            <table style="width=100%">
+                <br />
+                <tr>
+                    <td>
+                        <img src="images/wind1.png" align="middle" width="400px" />
+                        <figcaption align="middle">Wind : Speed = 1, Direction = x</figcaption>
+                    </td>
+                    <td>
+                        <img src="images/windMirror.png" align="middle" width="400px" />
+                        <figcaption align="middle">Wind : Speed = 1, Direction = x</figcaption>
+                    </td>
+                </tr>
+                <br />
+                <tr>
+                    <td>
+                        <img src="images/windNormal.png" align="middle" width="400px" />
+                        <figcaption align="middle">Wind : Speed = 1, Direction = x</figcaption>
+                    </td>
+                    <td>
+                        <img src="images/windMirror2.png" align="middle" width="400px" />
+                        <figcaption align="middle">Wind : Speed = 2, Direction = x</figcaption>
+                    </td>
+                </tr>
+                <br />
+                <tr>
+                    <td>
+                        <img src="images/windPerp.png" align="middle" width="400px" />
+                        <figcaption align="middle">Wind : Speed = 2, Direction = xy</figcaption>
+                    </td>
+                    <td>
+                        <img src="images/windPerp2.png" align="middle" width="400px" />
+                        <figcaption align="middle">Wind : Speed = 2, Direction = xy</figcaption>
+                    </td>
+                </tr>
+                <br />
+            </table>
+        </div>
+
+    </div></body>
 </html>
